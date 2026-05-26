@@ -1,0 +1,17 @@
+# Datos generados (GeoJSON, CSV, XLSX procesados)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+
+# Streamlit local cache
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db

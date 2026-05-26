@@ -5,6 +5,7 @@ Módulo 2 — Consulta
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -27,15 +28,18 @@ _COLOR_ESTADO = {
     "Cierre Administrativo Sin Reasentamiento": [106, 13, 173, 200],
 }
 _COLOR_RIESGO = {
-    "REMOCION EN MASA":   [204, 0, 0, 200],
-    "INUNDACION":         [21, 101, 192, 200],
-    "AVENIDA TORRENCIAL": [230, 92, 0, 200],
+    "Remoción en masa":   [204, 0, 0, 200],
+    "Inundación":         [21, 101, 192, 200],
+    "Avenida torrencial": [230, 92, 0, 200],
 }
 _COLOR_TIPO = {
-    "PREDIO": [204, 0, 0, 200],
-    "MEJORA": [0, 122, 61, 200],
-    "LOTE":   [255, 195, 0, 200],
+    "Predio": [204, 0, 0, 200],
+    "Mejora": [0, 122, 61, 200],
+    "Lote":   [255, 195, 0, 200],
 }
+
+def _norm(s: str) -> str:
+    return unicodedata.normalize("NFD", s.upper()).encode("ascii", "ignore").decode()
 _COLOR_DEFAULT    = [150, 150, 150, 150]
 _COLOR_SELECTED   = [255, 220, 0, 230]
 
@@ -435,13 +439,13 @@ def _get_color(props, modo):
         v = str(props.get("ESTADO_DEPURADO", ""))
         return _COLOR_ESTADO.get(v, _COLOR_DEFAULT)
     elif modo == "Tipo de riesgo":
-        k = str(props.get("TP_RIESGO","")).upper()
+        k = _norm(str(props.get("TP_RIESGO", "")))
         for key, col in _COLOR_RIESGO.items():
-            if key in k: return col
+            if _norm(key) in k: return col
     elif modo == "Tipo predio":
-        k = str(props.get("TIPO_PRED","")).upper()
+        k = _norm(str(props.get("TIPO_PRED", "")))
         for key, col in _COLOR_TIPO.items():
-            if key in k: return col
+            if _norm(key) in k: return col
     return _COLOR_DEFAULT
 
 
@@ -834,19 +838,13 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
         if rid and rid.lower() not in ("nan", "none", ""):
             m = df_reas[df_reas["REA_Identi"].astype(str).str.strip() == rid]
             if not m.empty:
-                _now  = _time_mod.time()
-                _last = st.session_state.get("_last_map_click", {"rid": None, "t": 0})
-                _dbl  = (_last["rid"] == rid and _now - _last["t"] < 1.5)
-                st.session_state["_last_map_click"] = {"rid": rid, "t": _now}
-
-                st.session_state["sel_idx"]     = m.index[0]
-                st.session_state["zoom_key"]    = zoom_key + 1
+                new_idx = m.index[0]
+                # Siempre actualizar selección (sin cambiar zoom_key para evitar
+                # problemas de doble clic: ambos clics llegan al mismo widget)
+                st.session_state["sel_idx"]     = new_idx
                 st.session_state["clear_count"] = st.session_state.get("clear_count", 0) + 1
                 st.session_state.pop("marker", None)
                 st.session_state.pop("gis_only_id", None)
-                if _dbl:
-                    st.session_state["inp_attr"] = ""
-                    st.session_state["inp_addr"] = ""
                 st.rerun()
 
     # Leyenda

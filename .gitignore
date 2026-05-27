@@ -1,5 +1,6 @@
-# Datos generados (GeoJSON, CSV, XLSX procesados)
-data/
+# Datos con información personal sensible
+data/propietario.csv
+data/predio.csv
 
 # Python
 __pycache__/

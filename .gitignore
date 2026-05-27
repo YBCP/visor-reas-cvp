@@ -1,5 +1,4 @@
 # Datos con información personal sensible
-data/propietario.csv
 data/predio.csv
 
 # Python

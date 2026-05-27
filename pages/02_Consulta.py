@@ -70,15 +70,6 @@ def load_reas():
     return gj, df
 
 
-@st.cache_data(show_spinner="Cargando capa Lote...")
-def load_lote():
-    p = DATA_DIR / "lote.geojson"
-    if not p.exists():
-        return None
-    with open(p, encoding="utf-8") as f:
-        return json.load(f)
-
-
 @st.cache_data
 def load_tabla(nombre):
     p = DATA_DIR / nombre
@@ -671,7 +662,7 @@ def _render_ficha(props, lat, lon, df_propietario, df_gis, df_depuracion):
 
 # ── Fragmento: mapa + controles + mini-ficha ──────────────────────────────────
 
-def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
+def _mapa_fragment(gj_reas, df_reas, df_propietario,
                    df_gis, df_depuracion):
     try:
         import pydeck as pdk
@@ -680,10 +671,9 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
         return
 
     # Controles sobre el mapa
-    c1, c2, c3, c4 = st.columns([1, 1, 2, 2])
+    c1, c2, c3 = st.columns([1, 2, 2])
     show_reas = c1.checkbox("REAS",  value=True,  key="ck_reas")
-    show_lote = c2.checkbox("Lote",  value=False, key="ck_lote")
-    color_por = c3.selectbox("Colorear por:",
+    color_por = c2.selectbox("Colorear por:",
                              ["Estado", "Tipo de riesgo", "Tipo predio"],
                              label_visibility="collapsed", key="sel_color")
 
@@ -692,7 +682,7 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
     marker    = st.session_state.get("marker")
     zoom_key  = st.session_state.get("zoom_key", 0)
 
-    if c4.button("⌂ Vista completa", key="btn_home"):
+    if c3.button("⌂ Vista completa", key="btn_home"):
         st.session_state.pop("sel_idx", None)
         st.session_state.pop("marker", None)
         st.session_state.pop("gis_only_id", None)
@@ -725,15 +715,6 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
                if sel_idx is not None and sel_idx in df_reas.index else None)
 
     layers = []
-    if show_lote and gj_lote:
-        layers.append(pdk.Layer(
-            "GeoJsonLayer", data=gj_lote,
-            get_fill_color=[210, 210, 200, 50],
-            get_line_color=[150, 150, 140, 120],
-            line_width_min_pixels=0,
-            line_width_max_pixels=1,
-            pickable=True, id="lote_layer"))
-
     if show_reas and gj_reas:
         gj_color = _reas_gj_coloreado(
             len(gj_reas.get("features", [])), color_por, _dep_hash, gj_reas, _dep_dict)
@@ -840,6 +821,7 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
             if not m.empty:
                 new_idx = m.index[0]
                 st.session_state["sel_idx"]     = new_idx
+                sel_idx = new_idx
                 st.session_state["clear_count"] = st.session_state.get("clear_count", 0) + 1
                 st.session_state.pop("marker", None)
                 st.session_state.pop("gis_only_id", None)
@@ -1135,8 +1117,6 @@ if not (DATA_DIR / "reas.geojson").exists():
     st.cache_data.clear()
 
 gj_reas, df_reas = load_reas()
-# lote.geojson es 55 MB — se carga solo cuando el usuario lo activa
-gj_lote          = load_lote() if st.session_state.get("ck_lote", False) else None
 df_propietario   = load_tabla("propietario.csv")
 df_gis           = load_tabla("gis.csv")
 df_depuracion    = load_tabla("depuracion.csv")
@@ -1223,7 +1203,6 @@ hcol.markdown(f"""
   <div style="font-size:1rem;font-weight:800;">Módulo 2 — Consulta</div>
   <div style="margin-top:2px;opacity:.7;font-size:.78rem;">
     {_n_reas:,} predios REAS
-    {"· Lote ✓" if gj_lote else ""}
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -1238,7 +1217,7 @@ def _sel_rows(ev):
 _busqueda_fragment(df_reas, df_gis)
 
 # ── Mapa ─────────────────────────────────────────────────────────────────────
-_mapa_fragment(gj_reas, df_reas, gj_lote,
+_mapa_fragment(gj_reas, df_reas,
                df_propietario, df_gis, df_depuracion)
 
 # ── Resultado GIS sin geometría ───────────────────────────────────────────────

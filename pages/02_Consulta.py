@@ -755,6 +755,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
     view = pdk.ViewState(latitude=vlat, longitude=vlon, zoom=vzoom, pitch=0)
     deck = pdk.Deck(
         layers=layers, initial_view_state=view,
+        views=[{"@@type": "MapView", "controller": {"doubleClickZoom": False}}],
         tooltip={"html": "<b>{REA_Identi}</b><br/>{BARRIO_LEG} · {LocNombre}<br/>{ESTADO_DEPURADO}",
                  "style": {"backgroundColor": NAVY, "color":"white",
                             "fontSize":"12px","borderRadius":"8px","padding":"8px 12px"}},
@@ -820,13 +821,20 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
             m = df_reas[df_reas["REA_Identi"].astype(str).str.strip() == rid]
             if not m.empty:
                 new_idx = m.index[0]
+                changed = (new_idx != st.session_state.get("sel_idx"))
                 st.session_state["sel_idx"]     = new_idx
                 sel_idx = new_idx
                 st.session_state["clear_count"] = st.session_state.get("clear_count", 0) + 1
+                # Limpiar todas las consultas activas
+                st.session_state["inp_attr"]       = ""
+                st.session_state.pop("_last_attr_q", None)
+                st.session_state.pop("_geo_result", None)
+                st.session_state.pop("_last_geo_addr", None)
                 st.session_state.pop("marker", None)
                 st.session_state.pop("gis_only_id", None)
-                # on_select="rerun" ya lanza el rerun automáticamente;
-                # NO llamar st.rerun() aquí para evitar doble-rerun con doble clic
+                if changed:
+                    # Rerun para que la vista (zoom) se recalcule con el nuevo sel_idx
+                    st.rerun()
 
     # Leyenda
     leyenda = {"Estado": _COLOR_ESTADO,

@@ -826,8 +826,10 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
                 sel_idx = new_idx
                 st.session_state["clear_count"] = st.session_state.get("clear_count", 0) + 1
                 # Limpiar todas las consultas activas
-                st.session_state["inp_attr"]       = ""
-                st.session_state.pop("_last_attr_q", None)
+                # Sincronizar _last_attr_q para que el fragment no detecte cambio y borre sel_idx
+                _cur_q = st.session_state.get("inp_attr", "").strip().lower()
+                st.session_state["_last_attr_q"]         = _cur_q
+                st.session_state["_hide_search_results"] = True
                 st.session_state.pop("_geo_result", None)
                 st.session_state.pop("_last_geo_addr", None)
                 st.session_state.pop("marker", None)
@@ -878,8 +880,9 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
 def _busqueda_fragment(df_reas, df_gis):
     """Contiene inputs + resultados. Al escribir solo rerenderiza este bloque (no el mapa)."""
     import streamlit.components.v1 as components
-    _cc   = st.session_state.get("clear_count", 0)
-    _modo = st.session_state.get("modo_radio", "Por atributo")
+    _cc      = st.session_state.get("clear_count", 0)
+    _modo    = st.session_state.get("modo_radio", "Por atributo")
+    _hide_res = st.session_state.pop("_hide_search_results", False)
 
     # ── Input: atributo (barra superior, área principal) ─────────────────────
     if _modo == "Por atributo":
@@ -942,7 +945,7 @@ def _busqueda_fragment(df_reas, df_gis):
             st.session_state["_last_geo_addr"] = ""
             st.session_state["zoom_key"] = st.session_state.get("zoom_key", 0) + 1
             st.rerun(scope="app")
-        if _t:
+        if _t and not _hide_res:
             _tipo = _detect_tipo(_t)
             _id_m = (df_reas["REA_Identi"].astype(str).str.lower().str.contains(_t, na=False, regex=False)
                      if "REA_Identi" in df_reas.columns else pd.Series(False, index=df_reas.index))

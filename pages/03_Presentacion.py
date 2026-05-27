@@ -10,7 +10,6 @@ import pandas as pd
 import streamlit as st
 
 DATA_DIR  = Path(__file__).parent.parent / "data"
-INPUT_DIR = Path(__file__).parent.parent.parent / "Archivos de entrada"
 
 NAVY  = "#1A1F36"
 TEAL  = "#00C9A7"
@@ -32,14 +31,12 @@ COLOR_DEFAULT = [150, 150, 150, 160]
 # ── Carga ────────────────────────────────────────────────────────────────────
 
 @st.cache_data(show_spinner=False)
-def _load_capa_gj(shp_path: str, keep_cols: list) -> dict:
-    try:
-        import geopandas as gpd
-        gdf = gpd.read_file(shp_path).to_crs("EPSG:4326")
-        gdf = gdf[[c for c in keep_cols if c in gdf.columns] + ["geometry"]]
-        return json.loads(gdf.to_json())
-    except Exception as e:
-        return {"__error__": str(e)}
+def _load_capa_gj(geojson_name: str) -> dict:
+    p = DATA_DIR / geojson_name
+    if not p.exists():
+        return {}
+    with open(p, encoding="utf-8") as f:
+        return json.load(f)
 
 
 @st.cache_data(show_spinner=False)
@@ -147,13 +144,8 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 # ── Carga datos ───────────────────────────────────────────────────────────────
-with st.spinner("Cargando capas..."):
-    gj_loc = _load_capa_gj(
-        str(INPUT_DIR / "Localidad" / "Loca.shp"),
-        ["LocNombre", "LocCodigo", "LocArea"])
-    gj_upl = _load_capa_gj(
-        str(INPUT_DIR / "UPL" / "UnidadPlaneamientoLocal.shp"),
-        ["CODIGO_UPL", "NOMBRE", "VOCACION", "AREA_HA", "SECTOR"])
+gj_loc = _load_capa_gj("localidad.geojson")
+gj_upl = _load_capa_gj("upl.geojson")
 
 gj_reas_raw = _load_reas_gj()
 df_dep      = _load_depuracion()

@@ -1135,7 +1135,8 @@ if not (DATA_DIR / "reas.geojson").exists():
     st.cache_data.clear()
 
 gj_reas, df_reas = load_reas()
-gj_lote          = load_lote()
+# lote.geojson es 55 MB — se carga solo cuando el usuario lo activa
+gj_lote          = load_lote() if st.session_state.get("ck_lote", False) else None
 df_propietario   = load_tabla("propietario.csv")
 df_gis           = load_tabla("gis.csv")
 df_depuracion    = load_tabla("depuracion.csv")

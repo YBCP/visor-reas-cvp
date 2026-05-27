@@ -135,8 +135,6 @@ def _kpi(label, valor, color, pct=None):
 # PÁGINA
 # ════════════════════════════════════════════════════════════════════════════
 
-st.set_page_config(page_title="Presentación · CVP", layout="wide",
-                   initial_sidebar_state="expanded")
 
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,{NAVY} 0%,#2C3560 100%);

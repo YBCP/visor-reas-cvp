@@ -1127,8 +1127,6 @@ def _busqueda_fragment(df_reas, df_gis):
 # PÁGINA
 # ════════════════════════════════════════════════════════════════════════════
 
-st.set_page_config(page_title="Consulta · CVP", layout="wide",
-                   initial_sidebar_state="expanded")
 
 # Auto-convertir REAS si no existe
 if not (DATA_DIR / "reas.geojson").exists():

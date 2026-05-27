@@ -99,8 +99,6 @@ def _id_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
 
 # ── Página ────────────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="Programar Visita · CVP", layout="wide",
-                   initial_sidebar_state="collapsed")
 
 _section_header("Módulo 5 — Programar Visita",
                 "Carga una lista de identificadores REAS para planificar recorridos de campo")

@@ -65,8 +65,6 @@ def _fuente() -> str | None:
 
 # ── Página ────────────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="Origen Destino · CVP", layout="wide",
-                   initial_sidebar_state="expanded")
 
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,{NAVY} 0%,#2C3560 100%);

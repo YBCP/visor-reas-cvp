@@ -839,13 +839,12 @@ def _mapa_fragment(gj_reas, df_reas, gj_lote, df_propietario,
             m = df_reas[df_reas["REA_Identi"].astype(str).str.strip() == rid]
             if not m.empty:
                 new_idx = m.index[0]
-                # Siempre actualizar selección (sin cambiar zoom_key para evitar
-                # problemas de doble clic: ambos clics llegan al mismo widget)
                 st.session_state["sel_idx"]     = new_idx
                 st.session_state["clear_count"] = st.session_state.get("clear_count", 0) + 1
                 st.session_state.pop("marker", None)
                 st.session_state.pop("gis_only_id", None)
-                st.rerun()
+                # on_select="rerun" ya lanza el rerun automáticamente;
+                # NO llamar st.rerun() aquí para evitar doble-rerun con doble clic
 
     # Leyenda
     leyenda = {"Estado": _COLOR_ESTADO,

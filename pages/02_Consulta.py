@@ -804,13 +804,25 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
             return objs
         return []
 
-    import time as _time_mod
     objs = {}
     if event is not None:
         objs = _extract_hits(event, _deck_key)
 
     # ── Procesar clic ──────────────────────────────────────────────────────────
     hits = _objs_to_hits(objs)
+
+    # ── DEBUG TEMPORAL ────────────────────────────────────────────────────────
+    with st.expander("🔍 Debug clic (remover después)", expanded=False):
+        st.write("event is None:", event is None)
+        if event is not None:
+            try:
+                st.write("event.selection:", event.selection)
+            except Exception as _e:
+                st.write("error leyendo selection:", str(_e))
+        st.write("objs:", objs)
+        st.write("hits count:", len(hits))
+        st.write("sel_idx actual:", st.session_state.get("sel_idx"))
+    # ── FIN DEBUG ─────────────────────────────────────────────────────────────
 
     if hits and "REA_Identi" in df_reas.columns:
         _h = hits[0]
@@ -835,7 +847,8 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
                 st.session_state.pop("marker", None)
                 st.session_state.pop("gis_only_id", None)
                 if changed:
-                    # Rerun para que la vista (zoom) se recalcule con el nuevo sel_idx
+                    # Incrementar zoom_key fuerza remount del deck → initial_view_state se aplica
+                    st.session_state["zoom_key"] = zoom_key + 1
                     st.rerun()
 
     # Leyenda

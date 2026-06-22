@@ -440,12 +440,31 @@ def _get_color(props, modo):
     return _COLOR_DEFAULT
 
 
+def _round_geom(geom, nd=6):
+    """Redondea coordenadas a nd decimales (~11 cm a 6 decimales).
+    Reduce el peso del GeoJSON enviado al navegador sin afectar la visualización.
+    """
+    t = geom.get("type", "")
+    coords = geom.get("coordinates")
+    if not coords:
+        return geom
+    def _ring(r):
+        return [[round(x, nd), round(y, nd)] for x, y in r]
+    if t == "Polygon":
+        return {"type": t, "coordinates": [_ring(r) for r in coords]}
+    if t == "MultiPolygon":
+        return {"type": t, "coordinates": [[_ring(r) for r in poly] for poly in coords]}
+    return geom
+
+
 @st.cache_data(show_spinner=False, max_entries=4)
 def _reas_gj_coloreado(n_feats: int, color_por: str, dep_hash: int,
                         _gj_reas: dict, _dep_dict: dict) -> dict:
     """Pre-computa colores para todas las features REAS.
     dep_hash invalida la caché cuando cambia la tabla depuración.
     _gj_reas y _dep_dict tienen prefijo _ → no se hashean.
+    Las geometrías se redondean aquí (una sola vez, cacheado) para reducir
+    el tamaño del payload que pydeck retransmite al navegador en cada render.
     """
     _keep = {"REA_Identi", "BARRIO_LEG", "LocNombre", "TP_RIESGO", "chip", "TIPO_PRED"}
     feats = []
@@ -459,7 +478,8 @@ def _reas_gj_coloreado(n_feats: int, color_por: str, dep_hash: int,
         slim["_fill"]   = _get_color(slim, color_por)
         slim["_stroke"] = [180, 180, 180, 80]
         slim["_lw"]     = 0
-        feats.append({"type": "Feature", "geometry": feat["geometry"], "properties": slim})
+        feats.append({"type": "Feature", "geometry": _round_geom(feat["geometry"]),
+                      "properties": slim})
     return {"type": "FeatureCollection", "features": feats}
 
 
@@ -730,7 +750,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
             pickable=True, id="reas_layer"))
         # Capa de selección (polígono amarillo sobre el REAS activo)
         if sel_rid:
-            _sel_feats = [f for f in gj_reas.get("features", [])
+            _sel_feats = [f for f in gj_color.get("features", [])
                           if (f.get("properties") or {}).get("REA_Identi") == sel_rid]
             if _sel_feats:
                 layers.append(pdk.Layer(
@@ -810,19 +830,6 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
 
     # ── Procesar clic ──────────────────────────────────────────────────────────
     hits = _objs_to_hits(objs)
-
-    # ── DEBUG TEMPORAL ────────────────────────────────────────────────────────
-    with st.expander("🔍 Debug clic (remover después)", expanded=False):
-        st.write("event is None:", event is None)
-        if event is not None:
-            try:
-                st.write("event.selection:", event.selection)
-            except Exception as _e:
-                st.write("error leyendo selection:", str(_e))
-        st.write("objs:", objs)
-        st.write("hits count:", len(hits))
-        st.write("sel_idx actual:", st.session_state.get("sel_idx"))
-    # ── FIN DEBUG ─────────────────────────────────────────────────────────────
 
     if hits and "REA_Identi" in df_reas.columns:
         _h = hits[0]

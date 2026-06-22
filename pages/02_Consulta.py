@@ -46,7 +46,7 @@ _COLOR_SELECTED   = [255, 220, 0, 230]
 
 # ── Carga ─────────────────────────────────────────────────────────────────────
 
-@st.cache_data(show_spinner="Cargando capa REAS...")
+@st.cache_resource(show_spinner="Cargando capa REAS...")
 def load_reas():
     p = DATA_DIR / "reas.geojson"
     if not p.exists():
@@ -70,7 +70,7 @@ def load_reas():
     return gj, df
 
 
-@st.cache_data
+@st.cache_resource
 def load_tabla(nombre):
     p = DATA_DIR / nombre
     if not p.exists():
@@ -342,13 +342,13 @@ def _normalizar_dir(s: str) -> str:
 
 
 @st.cache_data(show_spinner=False)
-def _reas_bbox():
-    """Lee el bbox real de reas.geojson escaneando todos los vértices del anillo exterior."""
-    p = DATA_DIR / "reas.geojson"
-    if not p.exists():
+def _reas_bbox(_gj_reas: dict):
+    """Calcula el bbox real de la capa REAS escaneando todos los vértices del anillo exterior.
+    Reutiliza el GeoJSON ya parseado por load_reas() en vez de releerlo del disco.
+    """
+    gj = _gj_reas
+    if not gj:
         return None
-    with open(p, encoding="utf-8") as f:
-        gj = json.load(f)
     # Si el GeoJSON ya tiene bbox guardado, usarlo directo
     if "bbox" in gj and len(gj["bbox"]) >= 4:
         b = gj["bbox"]
@@ -377,10 +377,10 @@ def _reas_bbox():
     return min_lat, max_lat, min_lon, max_lon
 
 
-def _home_view(df_reas):
+def _home_view(df_reas, gj_reas):
     """Calcula center + zoom para mostrar toda la capa REAS (usa bbox real)."""
     import math
-    bbox = _reas_bbox()
+    bbox = _reas_bbox(gj_reas)
     if bbox:
         min_lat, max_lat, min_lon, max_lon = bbox
     else:
@@ -457,7 +457,7 @@ def _round_geom(geom, nd=6):
     return geom
 
 
-@st.cache_data(show_spinner=False, max_entries=4)
+@st.cache_resource(show_spinner=False, max_entries=4)
 def _reas_gj_coloreado(n_feats: int, color_por: str, dep_hash: int,
                         _gj_reas: dict, _dep_dict: dict) -> dict:
     """Pre-computa colores para todas las features REAS.
@@ -717,7 +717,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
     elif marker:
         vlat, vlon, vzoom = marker[0], marker[1], 18
     else:
-        vlat, vlon, vzoom = _home_view(df_reas)
+        vlat, vlon, vzoom = _home_view(df_reas, gj_reas)
 
     # Construir lookup ESTADO_DEPURADO desde tabla depuración
     _dep_dict: dict = {}

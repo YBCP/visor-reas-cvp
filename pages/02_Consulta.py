@@ -70,12 +70,27 @@ def load_reas():
     return gj, df
 
 
+_GIS_RENAME = {
+    "identificador":          "Identificador",
+    "nombre1":                "Nombre 1",
+    "nombre2":                "Nombre 2",
+    "des_estado_proceso":     "Estado Proceso",
+    "des_estado_subproceso":  "Sub Estado Proceso",
+}
+
+
 @st.cache_resource
 def load_tabla(nombre):
     p = DATA_DIR / nombre
     if not p.exists():
         return None
-    return pd.read_csv(p, encoding="utf-8-sig", low_memory=False)
+    df = pd.read_csv(p, encoding="utf-8-sig", low_memory=False)
+    if nombre == "gis.csv":
+        # El export de GIS cambió sus encabezados a snake_case/minúsculas
+        # (identificador, nombre1...) — se renombran a los nombres que
+        # espera el resto del código (Identificador, Nombre 1...).
+        df = df.rename(columns={c: _GIS_RENAME[c] for c in df.columns if c in _GIS_RENAME})
+    return df
 
 
 def _centroid(geom):

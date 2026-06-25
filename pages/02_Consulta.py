@@ -606,7 +606,19 @@ def _render_ficha(props, lat, lon, df_propietario, df_gis, df_depuracion):
     def _por_chip(df, label):
         if df is None:
             st.info(f"Tabla {label} no cargada.", icon="📂"); return
-        chip_val = _val(props, "chip", "CHIP_VLI_1")
+        # CHIP_USO de depuración es el chip válido; fallback al GeoJSON
+        chip_val = None
+        if df_depuracion is not None:
+            _dep_idc = next((c for c in df_depuracion.columns
+                             if "rea" in c.lower() and "ident" in c.lower()), None)
+            if _dep_idc and "CHIP_USO" in df_depuracion.columns:
+                _dep_row = df_depuracion[
+                    df_depuracion[_dep_idc].astype(str).str.upper() == rea_id.upper()
+                ]
+                if not _dep_row.empty:
+                    chip_val = str(_dep_row.iloc[0]["CHIP_USO"])
+        if not chip_val or chip_val.upper() in ("NAN", "NA", "NONE", ""):
+            chip_val = _val(props, "chip", "CHIP_VLI_1")
         sub = pd.DataFrame()
         for col in df.columns:
             if "chip" in col.lower() or "predio" in col.lower():

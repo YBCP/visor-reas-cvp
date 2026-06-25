@@ -709,6 +709,7 @@ def _render_ficha(props, lat, lon, df_propietario, df_gis, df_depuracion):
 
 # ── Fragmento: mapa + controles + mini-ficha ──────────────────────────────────
 
+@st.fragment
 def _mapa_fragment(gj_reas, df_reas, df_propietario,
                    df_gis, df_depuracion):
     try:
@@ -883,7 +884,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
                 if changed:
                     # Incrementar zoom_key fuerza remount del deck → initial_view_state se aplica
                     st.session_state["zoom_key"] = zoom_key + 1
-                    st.rerun()
+                    st.rerun(scope="fragment")
 
     # Leyenda
     leyenda = {"Estado": _COLOR_ESTADO,
@@ -908,7 +909,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
             st.session_state["zoom_key"]    = zoom_key + 1
             st.session_state.pop("sel_idx", None)
             st.session_state.pop("gis_only_id", None)
-            st.rerun()
+            st.rerun(scope="fragment")
 
     # Ficha inline
     if sel_idx is not None and sel_idx in df_reas.index:

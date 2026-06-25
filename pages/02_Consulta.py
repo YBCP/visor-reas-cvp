@@ -1006,9 +1006,8 @@ def _busqueda_fragment(df_reas, df_gis, df_depuracion=None):
                                  if "rea" in c.lower() and "ident" in c.lower()), None)
                 if _dep_idc:
                     _dep_chip_m = pd.Series(False, index=df_depuracion.index)
-                    for _dc in ["CHIP_USO", "CHIP_ASIGNADO", "CHIP_VALIDADO"]:
-                        if _dc in df_depuracion.columns:
-                            _dep_chip_m |= df_depuracion[_dc].astype(str).str.lower().str.contains(_t, na=False, regex=False)
+                    if "CHIP_USO" in df_depuracion.columns:
+                        _dep_chip_m |= df_depuracion["CHIP_USO"].astype(str).str.lower().str.contains(_t, na=False, regex=False)
                     _reas_desde_dep = set(df_depuracion.loc[_dep_chip_m, _dep_idc].astype(str).str.upper())
                     if _reas_desde_dep:
                         _chip_m |= df_reas["REA_Identi"].astype(str).str.upper().isin(_reas_desde_dep)

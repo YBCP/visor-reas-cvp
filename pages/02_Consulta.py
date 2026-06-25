@@ -912,7 +912,7 @@ def _mapa_fragment(gj_reas, df_reas, df_propietario,
 # ════════════════════════════════════════════════════════════════════════════
 
 @st.fragment
-def _busqueda_fragment(df_reas, df_gis):
+def _busqueda_fragment(df_reas, df_gis, df_depuracion=None):
     """Contiene inputs + resultados. Al escribir solo rerenderiza este bloque (no el mapa)."""
     import streamlit.components.v1 as components
     _cc      = st.session_state.get("clear_count", 0)
@@ -988,6 +988,18 @@ def _busqueda_fragment(df_reas, df_gis):
             for _c in ["chip", "CHIP_VLI_1"]:
                 if _c in df_reas.columns:
                     _chip_m |= df_reas[_c].astype(str).str.lower().str.contains(_t, na=False, regex=False)
+            # Buscar también en CHIP_USO / CHIP_ASIGNADO de la tabla depuración
+            if df_depuracion is not None and "REA_Identi" in df_reas.columns:
+                _dep_idc = next((c for c in df_depuracion.columns
+                                 if "rea" in c.lower() and "ident" in c.lower()), None)
+                if _dep_idc:
+                    _dep_chip_m = pd.Series(False, index=df_depuracion.index)
+                    for _dc in ["CHIP_USO", "CHIP_ASIGNADO", "CHIP_VALIDADO"]:
+                        if _dc in df_depuracion.columns:
+                            _dep_chip_m |= df_depuracion[_dc].astype(str).str.lower().str.contains(_t, na=False, regex=False)
+                    _reas_desde_dep = set(df_depuracion.loc[_dep_chip_m, _dep_idc].astype(str).str.upper())
+                    if _reas_desde_dep:
+                        _chip_m |= df_reas["REA_Identi"].astype(str).str.upper().isin(_reas_desde_dep)
             _dir_m = pd.Series(False, index=df_reas.index)
             for _c in ["DIR_CAMPO", "DIR_CATAST"]:
                 if _c in df_reas.columns:
@@ -1260,7 +1272,7 @@ def _sel_rows(ev):
     return []
 
 # ── Fragmento de búsqueda (input + resultados, sin rerenderizar el mapa) ──────
-_busqueda_fragment(df_reas, df_gis)
+_busqueda_fragment(df_reas, df_gis, df_depuracion)
 
 # ── Mapa ─────────────────────────────────────────────────────────────────────
 _mapa_fragment(gj_reas, df_reas,
